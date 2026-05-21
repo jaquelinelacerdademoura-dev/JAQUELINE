@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro Avançado</title>
+    <!-- Chart.js para os Gráficos estilo Power BI -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-principal: #0b0c10;
+            --bg-card: rgba(31, 40, 51, 0.45);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --roxo-neon: #9d4edd;
+            --roxo-glow: rgba(157, 78, 221, 0.4);
+            --verde-esmeralda: #00f5d4;
+            --verde-glow: rgba(0, 245, 212, 0.3);
+            --vermelho-neon: #ff5a5f;
+            --texto-principal: #f8f9fa;
+            --texto-secundario: #a4a6b3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 0%, #1f1a3a 0%, var(--bg-principal) 70%);
+            color: var(--texto-principal);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* --- SIDEBAR LATERAL (Pastas/Abas) --- */
+        aside {
+            width: 280px;
+            background: rgba(15, 15, 20, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1rem;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2.5rem;
+            padding-left: 1rem;
+            background: linear-gradient(45deg, var(--verde-esmeralda), var(--roxo-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .menu-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--texto-secundario);
+            letter-spacing: 1.5px;
+            margin: 1.5rem 0 0.5rem 1rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            color: var(--texto-secundario);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 0.3rem;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .nav-item i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .nav-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-item.active {
+            color: #fff;
+            background: rgba(157, 78, 221, 0.15);
+            border-color: var(--roxo-neon);
+            box-shadow: 0 0 20px var(--roxo-glow);
+        }
+
+        /* Subpastas de Meses em Grid (Estilo Power BI) */
+        .months-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            padding: 0.5rem;
+        }
+
+        .month-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            padding: 6px;
+            font-size: 0.75rem;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--texto-secundario);
+        }
+
+        .month-chip:hover {
+            border-color: var(--verde-esmeralda);
+            color: #fff;
+            box-shadow: 0 0 10px var(--verde-glow);
+        }
+
+        .month-chip.active {
+            background: rgba(0, 245, 212, 0.15);
+            border-color: var(--verde-esmeralda);
+            color: #fff;
+            box-shadow: 0 0 15px var(--verde-glow);
+            font-weight: 600;
+        }
+
+        /* --- CONTEÚDO PRINCIPAL --- */
+        main {
+            flex-grow: 1;
+            padding: 2.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: calc(100% - 280px);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        /* Efeito de Vidro (Glassmorphism) */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Cards de Resumo */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .kpi-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+        }
+
+        .kpi-card.entradas::after { background: var(--verde-esmeralda); }
+        .kpi-card.saidas::after { background: var(--vermelho-neon); }
+        .kpi-card.balanco::after { background: var(--roxo-neon); }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: var(--texto-secundario);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        /* --- DASHBOARD VIEW (GRÁFICOS) --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        /* --- FORMULÁRIO --- */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            color: var(--texto-secundario);
+        }
+
+        input, select {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-glass);
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--roxo-neon);
+            box-shadow: 0 0 10px var(--roxo-glow);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--roxo-neon), #7b2cbf);
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--roxo-glow);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(157, 78, 221, 0.6);
+        }
+
+        /* --- TABELA DE TRANSAÇÕES --- */
+        .table-wrapper {
+            margin-top: 2rem;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1rem;
+            color: var(--texto-secundario);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        td {
+            padding: 1.2rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.95rem;
+        }
+
+        tr {
+            transition: background 0.3s;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Classes utilitárias de cores dinâmicas */
+        .txt-entrada { color: var(--verde-esmeralda); font-weight: 600; }
+        .txt-saida { color: var(--vermelho-neon); font-weight: 600; }
+        
+        .badge-cat {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-glass);
+        }
+
+        /* Animação Suave de Fade-In */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in-row {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* Gerenciador de Categorias Rapido */
+        .add-cat-btn {
+            background: transparent;
+            border: 1px dashed var(--texto-secundario);
+            color: var(--texto-secundario);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            box-shadow: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .add-cat-btn:hover {
+            border-color: var(--verde-esmeralda);
+            color: #fff;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR (Estrutura de pastas e abas do Power BI) -->
+    <aside>
+        <div class="logo"><i class="fa-solid fa-wallet"></i> Avançado Fin</div>
+        
+        <div class="menu-title">Análise Geral</div>
+        <div class="nav-item active" id="aba-visao-geral" onclick="mudarAba('geral')">
+            <i class="fa-solid fa-chart-pie"></i> Visão Geral
+        </div>
+
+        <div class="menu-title">Meses (Filtro BI)</div>
+        <div class="months-grid">
+            <div class="month-chip" data-mes="0" onclick="filtrarPorMes(0, this)">Jan</div>
+            <div class="month-chip" data-mes="1" onclick="filtrarPorMes(1, this)">Fev</div>
+            <div class="month-chip" data-mes="2" onclick="filtrarPorMes(2, this)">Mar</div>
+            <div class="month-chip" data-mes="3" onclick="filtrarPorMes(3, this)">Abr</div>
+            <div class="month-chip" data-mes="4" onclick="filtrarPorMes(4, this)">Mai</div>
+            <div class="month-chip" data-mes="5" onclick="filtrarPorMes(5, this)">Jun</div>
+            <div class="month-chip" data-mes="6" onclick="filtrarPorMes(6, this)">Jul</div>
+            <div class="month-chip" data-mes="7" onclick="filtrarPorMes(7, this)">Ago</div>
+            <div class="month-chip" data-mes="8" onclick="filtrarPorMes(8, this)">Set</div>
+            <div class="month-chip" data-mes="9" onclick="filtrarPorMes(9, this)">Out</div>
+            <div class="month-chip" data-mes="10" onclick="filtrarPorMes(10, this)">Nov</div>
+            <div class="month-chip" data-mes="11" onclick="filtrarPorMes(11, this)">Dez</div>
+        </div>
+
+        <div class="menu-title" style="display: flex; align-items: center; justify-content: space-between;">
+            Categorias 
+            <button class="add-cat-btn" onclick="criarNovaCategoria()">+ Nova</button>
+        </div>
+        <div id="lista-categorias-sidebar" style="max-height: 200px; overflow-y: auto;">
+            <!-- Inserido dinamicamente via JS -->
+        </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main>
+        <header>
+            <div>
+                <h1 id="titulo-contexto">Visão Geral do Ano</h1>
+                <p style="color: var(--texto-secundario); font-size: 0.9rem;" id="subtitulo-contexto">Dados acumulados de todas as transações.</p>
+            </div>
+        </header>
+
+        <!-- CARDS DE INSIGHTS (KPIs) -->
+        <div class="kpi-container">
+            <div class="glass-card kpi-card entradas">
+                <div class="kpi-label">Total Entradas</div>
+                <div class="kpi-value" id="kpi-entradas">R$ 0,00</div>
+            </div>
+            <div class="glass-card kpi-card saidas">
+                <div class="kpi-label">Total Saídas</div>
+                <div class="kpi-value" id="kpi-saidas">R$ 0,00</div>
+            </div>
+            <div class="glass-card kpi-card balanco">
+                <div class="kpi-label">Balanço Líquido</div>
+                <div class="kpi-value" id="kpi-balanco">R$ 0,00</div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS (Aparecem prioritariamente na Visão Geral) -->
+        <div class="dashboard-grid" id="area-graficos">
+            <div class="glass-card">
+                <h3 style="margin-bottom: 1rem; font-size: 1rem;">Fluxo de Caixa Mensal</h3>
+                <div class="chart-container">
+                    <canvas id="graficoLinha"></canvas>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 style="margin-bottom: 1rem; font-size: 1rem;">Divisão por Categorias</h3>
+                <div class="chart-container">
+                    <canvas id="graficoRosca"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORMULÁRIO DE LANÇAMENTO -->
+        <div class="glass-card" style="margin-bottom: 2.5rem;">
+            <h3 style="margin-bottom: 1.2rem; font-size: 1.1rem; color: var(--verde-esmeralda);">
+                <i class="fa-solid fa-plus-minus"></i> Novo Lançamento Avançado
+            </h3>
+            <form id="finance-form" onsubmit="adicionarTransacao(event)">
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Nome / Descrição</label>
+                        <input type="text" id="desc" placeholder="Ex: Aluguel, Salário" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" step="0.01" id="valor" placeholder="0,00" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Tipo</label>
+                        <select id="tipo">
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="saida">Saída (-)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Categoria</label>
+                        <select id="categoria-select">
+                            <!-- Opções preenchidas via JS -->
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Data</label>
+                        <input type="date" id="data-lancamento" required>
+                    </div>
+                    <button type="submit"><i class="fa-solid fa-check"></i> Salvar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- TABELA DE TRANSAÇÕES FILTRADAS -->
+        <div class="glass-card">
+            <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Registros Analíticos</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-corpo">
+                        <!-- Linhas geradas dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- BANCO DE DADOS LOCAL (Simulado) ---
+        let transacoes = JSON.parse(localStorage.getItem('transacoes')) || [];
+        let categorias = JSON.parse(localStorage.getItem('categorias')) || [
+            'Moradia', 'Aluguel', 'Conta Água', 'Internet', 'Conta de Luz'
+        ];
+
+        let mesFiltroAtual = null; // null significa "Ver tudo / Visão Geral"
+        let chartLinha, chartRosca;
+
+        // Configuração inicial ao carregar a página
+        document.addEventListener("DOMContentLoaded", () => {
+            // Seta a data do input para o dia atual por padrão
+            document.getElementById('data-lancamento').valueAsDate = new Date();
+            
+            atualizarCategoriasUI();
+            renderizarDashboard();
+        });
+
+        // --- RENDERIZAÇÃO E LÓGICA BI ---
+        function renderizarDashboard() {
+            let filtradas = transacoes;
+            
+            if (mesFiltroAtual !== null) {
+                filtradas = transacoes.filter(t => {
+                    let data = new Date(t.data + 'T00:00:00'); // Trata timezone local
+                    return data.getMonth() === mesFiltroAtual;
+                });
+                document.getElementById('area-graficos').style.display = "none"; // Oculta visão consolidada nos meses
+            } else {
+                document.getElementById('area-graficos').style.display = "grid";
+            }
+
+            renderizarTabela(filtradas);
+            calcularKPIs(filtradas);
+            
+            if (mesFiltroAtual === null) {
+                renderizarGraficos();
+            }
+        }
+
+        function renderizarTabela(dados) {
+            const corpo = document.getElementById('tabela-corpo');
+            corpo.innerHTML = '';
+
+            if(dados.length === 0) {
+                corpo.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--texto-secundario);">Nenhuma transação encontrada para este contexto.</td></tr>`;
+                return;
+            }
+
+            // Ordenar por data decrescente
+            dados.sort((a,b) => new Date(b.data) - new Date(a.data));
+
+            dados.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.classList.add('fade-in-row');
+
+                const dataFormatada = new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                const classeValor = t.tipo === 'entrada' ? 'txt-entrada' : 'txt-saida';
+                const sinal = t.tipo === 'entrada' ? '+' : '-';
+
+                tr.innerHTML = `
+                    <td>${dataFormatada}</td>
+                    <td>${t.desc}</td>
+                    <td><span class="badge-cat">${t.categoria}</span></td>
+                    <td class="${classeValor}">${t.tipo.toUpperCase()}</td>
+                    <td class="${classeValor}">R$ ${sinal} ${parseFloat(t.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                `;
+                corpo.appendChild(tr);
+            });
+        }
+
+        function calcularKPIs(dados) {
+            let entradas = 0;
+            let saidas = 0;
+
+            dados.forEach(t => {
+                if(t.tipo === 'entrada') entradas += parseFloat(t.valor);
+                else told = saidas += parseFloat(t.valor);
+            });
+
+            let balanco = entradas - saidas;
+
+            document.getElementById('kpi-entradas').innerText = `R$ ${entradas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpi-saidas').innerText = `R$ ${saidas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            
+            const kpiBalanco = document.getElementById('kpi-balanco');
+            kpiBalanco.innerText = `R$ ${balanco.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            kpiBalanco.style.color = balanco >= 0 ? 'var(--verde-esmeralda)' : 'var(--vermelho-neon)';
+        }
+
+        // --- FILTROS ESTILO POWER BI ---
+        function filtrarPorMes(numMes, elemento) {
+            // Remove ativos das abas e dos chips
+            document.getElementById('aba-visao-geral').classList.remove('active');
+            document.querySelectorAll('.month-chip').forEach(c => c.classList.remove('active'));
+
+            // Ativa o chip clicado
+            elemento.classList.add('active');
+            mesFiltroAtual = numMes;
+
+            const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            document.getElementById('titulo-contexto').innerText = `Análise de ${nomeMeses[numMes]}`;
+            document.getElementById('subtitulo-contexto').innerText = `Exibindo métricas isoladas do mês escolhido.`;
+
+            renderizarDashboard();
+        }
+
+        function mudarAba(tipo) {
+            if (tipo === 'geral') {
+                mesFiltroAtual = null;
+                document.querySelectorAll('.month-chip').forEach(c => c.classList.remove('active'));
+                document.getElementById('aba-visao-geral').classList.add('active');
+                
+                document.getElementById('titulo-contexto').innerText = `Visão Geral do Ano`;
+                document.getElementById('subtitulo-contexto').innerText = `Dados acumulados de todas as transações.`;
+                
+                renderizarDashboard();
+            }
+        }
+
+        // --- CONTROLADORES DE CATEGORIAS ---
+        function atualizarCategoriasUI() {
+            const select = document.getElementById('categoria-select');
+            const sidebarLista = document.getElementById('lista-categorias-sidebar');
+            
+            select.innerHTML = '';
+            sidebarLista.innerHTML = '';
+
+            categorias.forEach(cat => {
+                // Preenche formulário select
+                let opt = document.createElement('option');
+                opt.value = cat;
+                opt.innerText = cat;
+                select.appendChild(opt);
+
+                // Preenche sidebar
+                let div = document.createElement('div');
+                div.classList.add('nav-item');
+                div.style.fontSize = "0.85rem";
+                div.style.padding = "0.5rem 1rem";
+                div.innerHTML = `<i class="fa-regular fa-folder-open" style="color:var(--roxo-neon)"></i> ${cat}`;
+                sidebarLista.appendChild(div);
+            });
+        }
+
+        function criarNovaCategoria() {
+            let nome = prompt("Digite o nome da nova categoria de finanças:");
+            if(nome && nome.trim() !== "") {
+                categorias.push(nome.trim());
+                localStorage.setItem('categorias', JSON.stringify(categorias));
+                atualizarCategoriasUI();
+            }
+        }
+
+        // --- SUBMISSÃO DE FORMULÁRIO ---
+        function adicionarTransacao(e) {
+            e.preventDefault();
+
+            const novaTransacao = {
+                id: Date.now(),
+                desc: document.getElementById('desc').value,
+                valor: document.getElementById('valor').value,
+                tipo: document.getElementById('tipo').value,
+                categoria: document.getElementById('categoria-select').value,
+                data: document.getElementById('data-lancamento').value
+            };
+
+            transacoes.push(novaTransacao);
+            localStorage.setItem('transacoes', JSON.stringify(transacoes));
+            
+            document.getElementById('finance-form').reset();
+            document.getElementById('data-lancamento').valueAsDate = new Date(); // reseta data atual
+
+            renderizarDashboard();
+        }
+
+        // --- RENDERIZAÇÃO DE GRÁFICOS (CHART.JS) ---
+        function renderizarGraficos() {
+            // Processamento de dados para os gráficos
+            let mesesValoresEntrada = Array(12).fill(0);
+            let mesesValoresSaida = Array(12).fill(0);
+            let catsDados = {};
+
+            transacoes.forEach(t => {
+                let m = new Date(t.data + 'T00:00:00').getMonth();
+                if(t.tipo === 'entrada') mesesValoresEntrada[m] += parseFloat(t.valor);
+                else mesesValoresSaida[m] += parseFloat(t.valor);
+
+                // Categorias
+                if(!catsDados[t.categoria]) catsDados[t.categoria] = 0;
+                catsDados[t.categoria] += parseFloat(t.valor);
+            });
+
+            // Destruir gráficos antigos se existirem para evitar bugs de hover
+            if(chartLinha) chartLinha.destroy();
+            if(chartRosca) chartRosca.destroy();
+
+            // 1. Gráfico de Linha/Área Combinada
+            const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
+            chartLinha = new Chart(ctxLinha, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [
+                        {
+                            label: 'Entradas',
+                            data: mesesValoresEntrada,
+                            borderColor: '#00f5d4',
+                            backgroundColor: 'rgba(0, 245, 212, 0.05)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Saídas',
+                            data: mesesValoresSaida,
+                            borderColor: '#ff5a5f',
+                            backgroundColor: 'rgba(255, 90, 95, 0.05)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#f8f9fa' } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a4a6b3' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a4a6b3' } }
+                    }
+                }
+            });
+
+            // 2. Gráfico de Rosca (Categorias)
+            const ctxRosca = document.getElementById('graficoRosca').getContext('2d');
+            chartRosca = new Chart(ctxRosca, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(catsDados),
+                    datasets: [{
+                        data: Object.values(catsDados),
+                        backgroundColor: ['#9d4edd', '#00f5d4', '#ff5a5f', '#3a86ff', '#ffbe0b', '#fb5607'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#f8f9fa' } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3Zxd29hYXB3cnl3ZXl5eGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNzUzNzgsImV4cCI6MjA5NDk1MTM3OH0.tKltL6VB3cPgI0jAIYKjFsZTg-l55UGFp6NH9Yk6ArY
+
+
+
+
+https://ggovqwoaapwryweyyxhf.supabase.co
+
+
